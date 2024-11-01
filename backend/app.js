@@ -1,13 +1,29 @@
-import express from "express"
+import express, { urlencoded } from "express"
 import cors from "cors"
 import userRouter from "./router/user.router.js"
+import { connectDB } from "./utilities/features.js"
+import dotenv from 'dotenv'
+
+dotenv.config({
+    path:"./.env"
+})
+
 const app = express()
 
 app.use(cors())
+app.use(express.json())
+// app.use(express.urlencoded()) // for form-data
+// for handling file handling in user form for avatar file
+
+
+const dbURL = process.env.MONGO_URI
+const PORT = process.env.PORT || 1080
+
+connectDB(dbURL)
+
 app.use("/user", userRouter)
 
-
-app.listen(1080, () => {
+app.listen(PORT, () => {
     console.log(
     "Server @ 3000"
     );

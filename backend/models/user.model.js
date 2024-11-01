@@ -1,4 +1,5 @@
-import {Schema, model, models} from "mongoose";
+import mongoose, {Schema, model, Types} from "mongoose";
+import { hash } from "bcrypt";
 
 const userSchema = new Schema({
     name:{
@@ -29,4 +30,9 @@ const userSchema = new Schema({
     timestamps: true
 })
 
-export const User = models.User || model("User", userSchema)
+userSchema.pre("save", async function(next) {
+    if(!this.isModified("password")) next() // if pwd was not modified move ahead
+    this.password = await hash(this.password, 10) // this will hash passowrd only when pwd was modified
+})
+
+export const User = mongoose.models.User || model("User", userSchema)
