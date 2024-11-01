@@ -1,5 +1,6 @@
 import { User } from "../models/user.model.js"
 import {sendToken} from "../utilities/features.js"
+import { CustomError } from "../utilities/customError.js"
 import bcrypt, { compare } from "bcrypt"
 
 let userController = {}
@@ -36,13 +37,13 @@ userController.login = async(req, res, next) => {
 
     if(!user) {
         // return res.status(400).json({message:"Invalid Credentials"})
-        return next(new Error("Invalid Credentials"))
+        return next(new CustomError("Invalid Credentials", 404))
     }
 
     const isPasswordMatched = await compare(password, user.password)
 
     if(!isPasswordMatched) {
-        return next(new Error("Invalid Credentials"))
+        return next(new CustomError("Invalid Credentials", 404))
     }
 
     sendToken(res, user, 200, "User Login Successful")
@@ -52,6 +53,5 @@ userController.login = async(req, res, next) => {
     
     // res.send("Login Controller")   
 }
-
 
 export default userController;

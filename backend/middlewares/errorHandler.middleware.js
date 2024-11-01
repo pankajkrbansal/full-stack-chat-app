@@ -8,4 +8,12 @@ const errorHandler = (err, req, res,next) => {
     })
 }
 
+const TryCatch = (passedFx) => async(req, res,next) => {
+    try {
+        await passedFx(req, res,next)
+    } catch (error) {
+        next(error)        
+    }
+}
+
 export default errorHandler
