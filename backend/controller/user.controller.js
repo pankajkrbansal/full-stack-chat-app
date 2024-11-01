@@ -5,44 +5,53 @@ import bcrypt, { compare } from "bcrypt"
 let userController = {}
 
 userController.newUser = async(req, res, next) => {
-    const {name, username, password} = req.body;
+    try {
+        const {name, username, password} = req.body;
+    
     const avatar = {
         public_id:"123",
         url:"wenmmsk"
     }
+
     const user = await User.create({
         name:name,
         username:username,
         password:password,
         avatar
     })
-    // res.status(201).json({
-    //     message:"User Created"
-    // })
 
     sendToken(res, user, 201, "User Created")
 
+    } catch (error) {
+        next(error)        
+    }
 }
 
 userController.login = async(req, res, next) => {
-    // console.log("n\n\nHERE\n\n");
+    try {
+        // console.log("n\n\nHERE\n\n");
     const {username, password} = req.body;
 
     const user = await User.findOne({username}).select("+password")
 
     if(!user) {
-        return res.status(400).json({message:"Invalid Credentials"})
+        // return res.status(400).json({message:"Invalid Credentials"})
+        return next(new Error("Invalid Credentials"))
     }
 
     const isPasswordMatched = await compare(password, user.password)
 
     if(!isPasswordMatched) {
-        return res.status(400).json({message:"Invalid Credentials"})
+        return next(new Error("Invalid Credentials"))
     }
 
     sendToken(res, user, 200, "User Login Successful")
+    } catch (error) {
+        next(error)
+    }
     
     // res.send("Login Controller")   
 }
+
 
 export default userController;

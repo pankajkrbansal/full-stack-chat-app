@@ -3,6 +3,7 @@ import cors from "cors"
 import userRouter from "./router/user.router.js"
 import { connectDB } from "./utilities/features.js"
 import dotenv from 'dotenv'
+import errorHandler from "./middlewares/errorHandler.middleware.js"
 
 dotenv.config({
     path:"./.env"
@@ -22,6 +23,7 @@ const PORT = process.env.PORT || 1080
 connectDB(dbURL)
 
 app.use("/user", userRouter)
+app.use(errorHandler)
 
 app.listen(PORT, () => {
     console.log(
