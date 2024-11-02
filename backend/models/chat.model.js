@@ -23,5 +23,5 @@ const chatSchema = new Schema({
     timestamps: true
 })
 
-export const Chat = mongoose.models.Chat || model(chatSchema,"Chat")
+export const Chat = mongoose.models.Chat || model("Chat", chatSchema)
 

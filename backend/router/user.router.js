@@ -1,9 +1,14 @@
-import express from "express"
+import express from "express";
 import userController from "../controller/user.controller.js";
 import { singleAvatar } from "../middlewares/multer.middleware.js";
-const router = express.Router()
+import { isAuthenticated } from "../middlewares/auth.middleware.js";
+const userRouter = express.Router();
 
-router.post('/new', singleAvatar, userController.newUser)
-router.post('/login', userController.login)
+userRouter.post("/new", singleAvatar, userController.newUser);
+userRouter.post("/login", userController.login);
+userRouter.post("/logout", userController.logout);
 
-export default router;
+userRouter.get("/my-profile", isAuthenticated, userController.getMyProfile);
+userRouter.get("/search", isAuthenticated, userController.searchUser);
+
+export default userRouter;
