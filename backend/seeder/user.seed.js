@@ -14,7 +14,7 @@ const createUser = async(numUsers) => {
                     public_id: faker.system.fileName()
                 }
             })
-            userPromise.push()
+            userPromise.push(tempUser)
         }
         await Promise.all(userPromise)
     } catch (error) {
