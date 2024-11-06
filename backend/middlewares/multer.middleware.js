@@ -6,4 +6,7 @@ const multerUploads = multer({
     }
 });
 
-export const singleAvatar = multerUploads.single("avatar") // Now form field should be same what is mentioned here
+const singleAvatar = multerUploads.single("avatar") // Now form field should be same what is mentioned here
+const multerAttachments = multerUploads.array("files", 5)
+
+export {singleAvatar, multerAttachments}
