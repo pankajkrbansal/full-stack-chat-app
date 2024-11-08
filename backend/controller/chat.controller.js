@@ -286,6 +286,159 @@ chatController.sendAttachments = async (req, res, next) => {
   }
 };
 
-chatController.getChatDetails = async (req, res, next) => {};
+chatController.getChatDetails = async (req, res, next) => {
+  try {
+    if (req.query.populate === "true") {
+      const chat = await Chat.findById(req.params.id)
+        .populate("members", "name avatar")
+        .lean();
+
+      if (!chat) return next(new CustomError("Chat not found", 404));
+
+      chat.members = chat.members.map(({ _id, name, avatar }) => ({
+        _id,
+        name,
+        avatar: avatar.url,
+      }));
+
+      return res.status(200).json({
+        success: true,
+        chat,
+      });
+    } else {
+      const chat = await Chat.findById(req.params.id);
+      if (!chat) return next(new CustomError("Chat not found", 404));
+
+      return res.status(200).json({
+        success: true,
+        chat,
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+chatController.renameGroup = async (req, res, next) => {
+  try {
+    const chatId = req.params.id;
+    const { name } = req.body;
+
+    const chat = await Chat.findById(chatId);
+
+    if (!chat) return next(new ErrorHandler("Chat not found", 404));
+
+    if (!chat.groupChat)
+      return next(new ErrorHandler("This is not a group chat", 400));
+
+    if (chat.creator.toString() !== req.user.toString())
+      return next(
+        new ErrorHandler("You are not allowed to rename the group", 403)
+      );
+
+    chat.name = name;
+
+    await chat.save();
+
+    emitEvent(req, REFETCH_CHATS, chat.members);
+
+    return res.status(200).json({
+      success: true,
+      message: "Group renamed successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+chatController.deleteChat = async (req, res, next) => {
+  try {
+    const chatId = req.params.id;
+
+    const chat = await Chat.findById(chatId);
+
+    if (!chat) return next(new ErrorHandler("Chat not found", 404));
+
+    const members = chat.members;
+
+    if (chat.groupChat && chat.creator.toString() !== req.user.toString())
+      return next(
+        new ErrorHandler("You are not allowed to delete the group", 403)
+      );
+
+    if (!chat.groupChat && !chat.members.includes(req.user.toString())) {
+      return next(
+        new ErrorHandler("You are not allowed to delete the chat", 403)
+      );
+    }
+
+    //   Here we have to dete All Messages as well as attachments or files from cloudinary
+
+    const messagesWithAttachments = await Message.find({
+      chat: chatId,
+      attachments: { $exists: true, $ne: [] },
+    });
+
+    const public_ids = [];
+
+    messagesWithAttachments.forEach(({ attachments }) =>
+      attachments.forEach(({ public_id }) => public_ids.push(public_id))
+    );
+
+    await Promise.all([
+      deletFilesFromCloudinary(public_ids),
+      chat.deleteOne(),
+      Message.deleteMany({ chat: chatId }),
+    ]);
+
+    emitEvent(req, REFETCH_CHATS, members);
+
+    return res.status(200).json({
+      success: true,
+      message: "Chat deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+chatController.getMessages = async (req, res, next) => {
+  try {
+    const chatId = req.params.id;
+    const { page = 1 } = req.query;
+
+    const resultPerPage = 20;
+    const skip = (page - 1) * resultPerPage;
+
+    const chat = await Chat.findById(chatId);
+
+    if (!chat) return next(new ErrorHandler("Chat not found", 404));
+
+    if (!chat.members.includes(req.user.toString()))
+      return next(
+        new ErrorHandler("You are not allowed to access this chat", 403)
+      );
+
+    const [messages, totalMessagesCount] = await Promise.all([
+      Message.find({ chat: chatId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(resultPerPage)
+        .populate("sender", "name")
+        .lean(),
+      Message.countDocuments({ chat: chatId }),
+    ]);
+
+    const totalPages = Math.ceil(totalMessagesCount / resultPerPage) || 0;
+
+    return res.status(200).json({
+      success: true,
+      messages: messages.reverse(),
+      totalPages,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export default chatController;

@@ -1,7 +1,10 @@
 import express from "express";
 // import userController from "../controller/user.controller.js";
 import chatController from "../controller/chat.controller.js";
-import { multerAttachments, singleAvatar } from "../middlewares/multer.middleware.js";
+import {
+  multerAttachments,
+  singleAvatar,
+} from "../middlewares/multer.middleware.js";
 import { isAuthenticated } from "../middlewares/auth.middleware.js";
 
 const chatRouter = express.Router();
@@ -15,8 +18,25 @@ chatRouter.put(
   chatController.addMemberToGroup
 );
 chatRouter.put("/remove-member", isAuthenticated, chatController.removeMember);
-chatRouter.delete("/leave-group/:id", isAuthenticated, chatController.leaveGroup);
-chatRouter.post("/message", isAuthenticated, multerAttachments, chatController.sendAttachments)
+chatRouter.delete(
+  "/leave-group/:id",
+  isAuthenticated,
+  chatController.leaveGroup
+);
+chatRouter.post(
+  "/message",
+  isAuthenticated,
+  multerAttachments,
+  chatController.sendAttachments
+);
 
+chatRouter.get("/message/:id", isAuthenticated, chatController.getMessages);
+
+// chat
+chatRouter
+  .route("/:id")
+  .get(chatController.getChatDetails)
+  .put(chatController.renameGroup)
+  .delete(chatController.deleteChat);
 
 export default chatRouter;
